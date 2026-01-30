@@ -57,7 +57,7 @@ describe('🧪 Integración Completa del Sistema', () => {
                 } else {
                     console.warn('⚠️ Rama "Desarrollo de Software" no encontrada. Se usará el string para probar.');
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.warn('⚠️ Endpoint de ramas no disponible o falló:', error.message);
             }
         });
