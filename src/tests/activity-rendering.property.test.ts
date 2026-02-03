@@ -225,7 +225,7 @@ describe('🧪 Property-Based Test: Renderizado por Tipo de Actividad', () => {
               break;
 
             default:
-              throw new Error(`Tipo de actividad no reconocido: ${actividadData.tipo}`);
+              throw new Error(`Tipo de actividad no reconocido: ${(actividadData as any).tipo}`);
           }
 
           // Limpiar

@@ -3,7 +3,7 @@ import sequelize from '../config/database';
 
 class ResultadoTest extends Model {
   declare id: number;
-  declare odeclarei: number;
+  declare userId: number;
   declare ramaRecomendada: string;
   declare puntuaciones: any;
   declare fecha: Date;

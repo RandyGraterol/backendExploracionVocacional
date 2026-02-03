@@ -67,8 +67,7 @@ describe('Regression Tests - Existing Functionality', () => {
     // Crear preguntas vocacionales para el test
     await PreguntaVocacional.create({
       id: 1,
-      pregunta: '¿Te gusta programar?',
-      categoria: 'desarrollo'
+      pregunta: '¿Te gusta programar?'
     });
   });
 
