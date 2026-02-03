@@ -11,12 +11,17 @@ import actividadesRoutes from './routes/actividades';
 import resultadosTestRoutes from './routes/resultadosTest';
 import progresoActividadesRoutes from './routes/progresoActividades';
 import soporteRoutes from './routes/soporte';
+import superAdminRoutes from './routes/superAdminRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 3003;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || ['http://localhost:5173', 'http://localhost:8080', 'http://localhost:3000'],
+  credentials: true,
+  exposedHeaders: ['Content-Range', 'Accept-Ranges', 'Content-Length']
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -37,6 +42,7 @@ app.use('/backendGustavo/api/actividades', actividadesRoutes);
 app.use('/backendGustavo/api/resultados-test', resultadosTestRoutes);
 app.use('/backendGustavo/api/progreso-actividades', progresoActividadesRoutes);
 app.use('/backendGustavo/api/soporte', soporteRoutes);
+app.use('/backendGustavo/api/super-admin', superAdminRoutes);
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/preguntas-vocacionales', preguntasVocacionalesRoutes);
@@ -47,6 +53,7 @@ app.use('/api/actividades', actividadesRoutes);
 app.use('/api/resultados-test', resultadosTestRoutes);
 app.use('/api/progreso-actividades', progresoActividadesRoutes);
 app.use('/api/soporte', soporteRoutes);
+app.use('/api/super-admin', superAdminRoutes);
 
 // Error handling middleware
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
@@ -72,6 +79,9 @@ const startServer = async () => {
   }
 };
 
-startServer();
+// Only start server if not in test mode
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
 
 export default app;

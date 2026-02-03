@@ -5,7 +5,7 @@ class Actividad extends Model {
   declare id: string;
   declare title: string;
   declare description: string;
-  declare rama: string;
+  declare rama: string[]; // Cambiado de string a string[] para soportar múltiples ramas
   declare tipo: string;
   declare dificultad: string;
   declare imagen: string;
@@ -32,8 +32,21 @@ Actividad.init(
       allowNull: false
     },
     rama: {
-      type: DataTypes.STRING,
-      allowNull: false
+      type: DataTypes.JSON, // Cambiado de STRING a JSON para almacenar array de ramas
+      allowNull: false,
+      validate: {
+        isValidRamaArray(value: any) {
+          if (!Array.isArray(value)) {
+            throw new Error('El campo rama debe ser un array');
+          }
+          if (value.length === 0) {
+            throw new Error('Debe asociar al menos una rama a la actividad');
+          }
+          if (!value.every((item: any) => typeof item === 'string')) {
+            throw new Error('Todos los elementos del array rama deben ser strings');
+          }
+        }
+      }
     },
     tipo: {
       type: DataTypes.STRING,

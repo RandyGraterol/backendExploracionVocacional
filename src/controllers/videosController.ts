@@ -42,7 +42,10 @@ export const getById = async (req: Request, res: Response) => {
 export const upload = async (req: Request, res: Response) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No se ha subido ningún archivo' });
+      return res.status(400).json({ 
+        error: 'No se ha subido ningún archivo',
+        details: 'Por favor selecciona un archivo de video para subir'
+      });
     }
     
     const { titulo, descripcion, rama } = req.body;
@@ -50,8 +53,49 @@ export const upload = async (req: Request, res: Response) => {
     if (!titulo || !rama) {
       // Eliminar archivo si falta información
       fs.unlinkSync(req.file.path);
-      return res.status(400).json({ error: 'Título y rama son requeridos' });
+      return res.status(400).json({ 
+        error: 'Título y rama son requeridos',
+        details: 'Por favor completa todos los campos obligatorios'
+      });
     }
+    
+    // Validación adicional del archivo
+    const fileExtension = path.extname(req.file.originalname).toLowerCase();
+    if (fileExtension !== '.mp4') {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ 
+        error: 'Extensión de archivo no permitida',
+        details: 'Solo se aceptan archivos con extensión .mp4'
+      });
+    }
+    
+    // Validar mimetype
+    if (req.file.mimetype !== 'video/mp4') {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ 
+        error: 'Tipo de archivo no permitido',
+        details: `El archivo tiene mimetype ${req.file.mimetype}. Solo se aceptan archivos video/mp4. Si descargaste este video de YouTube, puede tener un formato incompatible. Intenta convertirlo con una herramienta de video o graba un video directamente.`
+      });
+    }
+    
+    // Validar tamaño
+    const maxSize = 100 * 1024 * 1024; // 100MB
+    if (req.file.size > maxSize) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ 
+        error: 'Archivo demasiado grande',
+        details: `El archivo tiene ${(req.file.size / (1024 * 1024)).toFixed(2)}MB. El tamaño máximo permitido es 100MB.`
+      });
+    }
+    
+    console.log('✅ Video validado correctamente:', {
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: `${(req.file.size / (1024 * 1024)).toFixed(2)}MB`,
+      titulo,
+      rama
+    });
     
     const video = await Video.create({
       titulo,
@@ -65,12 +109,19 @@ export const upload = async (req: Request, res: Response) => {
     
     res.status(201).json(video);
   } catch (error) {
-    console.error('Error uploading video:', error);
+    console.error('❌ Error uploading video:', error);
     // Eliminar archivo si hay error
     if (req.file) {
-      fs.unlinkSync(req.file.path);
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkError) {
+        console.error('Error eliminando archivo:', unlinkError);
+      }
     }
-    res.status(500).json({ error: 'Error al subir el video' });
+    res.status(500).json({ 
+      error: 'Error al subir el video',
+      details: 'Ocurrió un error interno al procesar el video. Por favor intenta nuevamente.'
+    });
   }
 };
 

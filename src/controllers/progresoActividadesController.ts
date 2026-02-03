@@ -1,6 +1,20 @@
 import { Request, Response } from 'express';
 import { ProgresoActividad } from '../models';
 
+// GET - Obtener todos los progresos
+export const getAll = async (req: Request, res: Response) => {
+  try {
+    const progresos = await ProgresoActividad.findAll({
+      order: [['fecha', 'DESC']]
+    });
+    
+    res.json(progresos);
+  } catch (error) {
+    console.error('Error fetching all progreso:', error);
+    res.status(500).json({ error: 'Error al obtener los progresos' });
+  }
+};
+
 // GET - Obtener progreso por usuario
 export const getByUserId = async (req: Request, res: Response) => {
   try {

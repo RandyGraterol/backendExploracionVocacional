@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as controller from '../controllers/authController';
-import { verifyToken, requireAdmin } from '../middleware/auth';
+import { verifyToken, requireAdmin, requireSuperAdmin } from '../middleware/auth';
 
 const router = Router();
 
@@ -27,5 +27,8 @@ router.post('/users/:id/aprobar', verifyToken, requireAdmin, controller.aprobarU
 
 // POST /api/auth/users/:id/rechazar - Rechazar usuario (solo admin)
 router.post('/users/:id/rechazar', verifyToken, requireAdmin, controller.rechazarUser);
+
+// POST /api/auth/create-admin - Crear administrador (solo super_admin)
+router.post('/create-admin', verifyToken, requireSuperAdmin, controller.createAdmin);
 
 export default router;

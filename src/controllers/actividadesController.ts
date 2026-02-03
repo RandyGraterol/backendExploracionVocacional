@@ -1,17 +1,97 @@
 import { Request, Response } from 'express';
-import { Actividad } from '../models';
+import { Actividad, ResultadoTest, sequelize } from '../models';
+import { AuthRequest } from '../middleware/auth';
+import { QueryTypes } from 'sequelize';
+
+/**
+ * Valida que el contenido de la actividad sea apropiado según su tipo
+ * @param tipo - Tipo de actividad (quiz, simulacion, ordenamiento, practica, desafio)
+ * @param body - Datos de la actividad
+ * @returns true si la validación es exitosa, false en caso contrario
+ */
+const validateActivityContent = (tipo: string, body: any): { valid: boolean; error?: string } => {
+  switch(tipo.toLowerCase()) {
+    case 'quiz':
+      if (!Array.isArray(body.preguntas) || body.preguntas.length === 0) {
+        return { valid: false, error: 'Las actividades tipo Quiz requieren un array de preguntas con al menos 1 elemento' };
+      }
+      return { valid: true };
+    
+    case 'ordenamiento':
+      if (!Array.isArray(body.itemsOrden) || body.itemsOrden.length === 0) {
+        return { valid: false, error: 'Las actividades tipo Ordenamiento requieren un array de itemsOrden con al menos 1 elemento' };
+      }
+      return { valid: true };
+    
+    case 'simulacion':
+    case 'simulación':
+      if (!body.simulacion || typeof body.simulacion !== 'object') {
+        return { valid: false, error: 'Las actividades tipo Simulación requieren un objeto simulacion' };
+      }
+      return { valid: true };
+    
+    case 'practica':
+    case 'práctica':
+      if (!body.ejercicioCodigo || typeof body.ejercicioCodigo !== 'object') {
+        return { valid: false, error: 'Las actividades tipo Práctica requieren un objeto ejercicioCodigo' };
+      }
+      return { valid: true };
+    
+    case 'desafio':
+    case 'desafío':
+      if (!Array.isArray(body.paresDesafio) || body.paresDesafio.length === 0) {
+        return { valid: false, error: 'Las actividades tipo Desafío requieren un array de paresDesafio con al menos 1 elemento' };
+      }
+      return { valid: true };
+    
+    default:
+      return { valid: false, error: `Tipo de actividad no soportado: ${tipo}. Los tipos válidos son: quiz, simulacion, ordenamiento, practica, desafio` };
+  }
+};
 
 // GET - Obtener todas las actividades
-export const getAll = async (req: Request, res: Response) => {
+// Si el usuario es estudiante con rama asignada, filtra por su rama
+export const getAll = async (req: AuthRequest, res: Response) => {
   try {
-    const { rama } = req.query;
-    const whereClause = rama ? { rama: rama as string } : {};
+    const userId = req.user?.id;
+    const userRol = req.user?.rol;
 
+    // Si es estudiante, intentar obtener su rama recomendada
+    if (userRol === 'student' && userId) {
+      const resultado = await ResultadoTest.findOne({
+        where: { userId },
+        order: [['fecha', 'DESC']]
+      });
+
+      if (resultado && resultado.ramaRecomendada) {
+        // Filtrar actividades que incluyan la rama del estudiante
+        // Usar SQLite json_each para buscar en el array de ramas
+        const actividades = await sequelize.query(
+          `SELECT * FROM actividades 
+           WHERE EXISTS (
+             SELECT 1 FROM json_each(rama) 
+             WHERE json_each.value = :ramaEstudiante
+           )
+           ORDER BY title ASC`,
+          {
+            replacements: { ramaEstudiante: resultado.ramaRecomendada },
+            type: QueryTypes.SELECT,
+            model: Actividad,
+            mapToModel: true
+          }
+        ) as Actividad[];
+
+        console.log(`📊 Actividades filtradas para estudiante ${userId} (rama: ${resultado.ramaRecomendada}): ${actividades.length}`);
+        return res.json(actividades);
+      }
+    }
+
+    // Si no es estudiante o no tiene rama, retornar todas las actividades
     const actividades = await Actividad.findAll({
-      where: whereClause,
-      order: [['rama', 'ASC'], ['title', 'ASC']]
+      order: [['title', 'ASC']]
     });
 
+    console.log(`📊 Todas las actividades retornadas: ${actividades.length}`);
     res.json(actividades);
   } catch (error) {
     console.error('Error fetching actividades:', error);
@@ -51,6 +131,15 @@ export const create = async (req: Request, res: Response) => {
       return res.status(400).json({
         error: 'Campos requeridos: id, title, description, rama, tipo, dificultad',
         received: { id, title, description, rama, tipo, dificultad }
+      });
+    }
+
+    // Validación de contenido según tipo de actividad
+    const contentValidation = validateActivityContent(tipo, req.body);
+    if (!contentValidation.valid) {
+      console.log('❌ Validación de contenido fallida:', contentValidation.error);
+      return res.status(400).json({
+        error: contentValidation.error
       });
     }
 
@@ -115,6 +204,16 @@ export const update = async (req: Request, res: Response) => {
     const actividad = await Actividad.findByPk(id);
     if (!actividad) {
       return res.status(404).json({ error: 'Actividad no encontrada' });
+    }
+
+    // Si se está actualizando el tipo, validar el contenido
+    if (updateData.tipo) {
+      const contentValidation = validateActivityContent(updateData.tipo, updateData);
+      if (!contentValidation.valid) {
+        return res.status(400).json({
+          error: contentValidation.error
+        });
+      }
     }
 
     await actividad.update(updateData);

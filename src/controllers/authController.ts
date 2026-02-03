@@ -253,5 +253,44 @@ export const rechazarUser = async (req: Request, res: Response) => {
   }
 };
 
+// POST /api/auth/create-admin - Crear administrador (solo super_admin)
+export const createAdmin = async (req: Request, res: Response) => {
+  try {
+    const validation = validateRegisterInput(req.body);
+    if (!validation.valid) {
+      return res.status(400).json({ error: 'Validation failed', details: validation.errors });
+    }
+
+    const { nombre, apellido, email, password } = req.body;
+
+    // Verificar si el email ya existe
+    const existingUser = await Usuario.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ error: 'El email ya está registrado' });
+    }
+
+    // Crear usuario con rol admin
+    const usuario = await Usuario.create({
+      nombre,
+      apellido,
+      email,
+      password: hashPassword(password),
+      rol: 'admin',
+      estado: 'aprobado', // Los admins se crean ya aprobados
+      activo: true
+    });
+
+    console.log('✅ Administrador creado exitosamente:', email);
+
+    res.status(201).json({
+      message: 'Administrador creado correctamente',
+      user: usuario.toJSON()
+    });
+  } catch (error) {
+    console.error('❌ Error creando administrador:', error);
+    res.status(500).json({ error: 'Error al crear administrador' });
+  }
+};
+
 // Exportar hashPassword para usar en seed
 export { hashPassword };

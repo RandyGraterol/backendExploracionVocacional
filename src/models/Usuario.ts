@@ -1,7 +1,7 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
 
-export type UserRole = 'student' | 'admin';
+export type UserRole = 'student' | 'admin' | 'super_admin';
 export type UserStatus = 'pendiente' | 'aprobado' | 'rechazado';
 
 interface UsuarioAttributes {
@@ -72,7 +72,7 @@ Usuario.init(
       allowNull: false
     },
     rol: {
-      type: DataTypes.ENUM('student', 'admin'),
+      type: DataTypes.ENUM('student', 'admin', 'super_admin'),
       allowNull: false,
       defaultValue: 'student'
     },

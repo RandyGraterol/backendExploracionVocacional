@@ -15,6 +15,15 @@ const adminUser = {
   rol: 'admin' as const
 };
 
+// Usuario super administrador predeterminado
+const superAdminUser = {
+  nombre: 'Super',
+  apellido: 'Administrador',
+  email: 'superadmin@exploracion.com',
+  password: 'superadmin123',
+  rol: 'super_admin' as const
+};
+
 // Datos de ramas
 const ramasData = [
   {
@@ -85,7 +94,7 @@ const actividadesData = [
     id: 'quiz-ciberseguridad-1',
     title: 'Quiz de Ciberseguridad',
     description: 'Pon a prueba tus conocimientos sobre seguridad informática',
-    rama: 'ciberseguridad',
+    rama: ['ciberseguridad'],
     tipo: 'Quiz',
     dificultad: 'Intermedio',
     imagen: '/cyberSeguridad.jpeg',
@@ -102,7 +111,7 @@ const actividadesData = [
     id: 'quiz-basedatos-1',
     title: 'Quiz de Bases de Datos',
     description: 'Evalúa tus conocimientos sobre gestión de datos',
-    rama: 'bases-datos',
+    rama: ['bases-datos'],
     tipo: 'Quiz',
     dificultad: 'Intermedio',
     imagen: '/baseDatos.jpeg',
@@ -119,7 +128,7 @@ const actividadesData = [
     id: 'quiz-ia-1',
     title: 'Quiz de Inteligencia Artificial',
     description: 'Descubre cuánto sabes sobre IA y Machine Learning',
-    rama: 'ia',
+    rama: ['ia'],
     tipo: 'Quiz',
     dificultad: 'Avanzado',
     imagen: '/inteligenciaArtificial.jpeg',
@@ -136,7 +145,7 @@ const actividadesData = [
     id: 'quiz-desarrollo-web-1',
     title: 'Quiz de Desarrollo Web',
     description: 'Evalúa tus conocimientos sobre tecnologías web',
-    rama: 'desarrollo',
+    rama: ['desarrollo'],
     tipo: 'Quiz',
     dificultad: 'Básico',
     imagen: '/programacion.jpeg',
@@ -153,7 +162,7 @@ const actividadesData = [
     id: 'ordenamiento-algoritmo-1',
     title: 'Ordenar Pasos de un Algoritmo',
     description: 'Ordena correctamente los pasos para crear un algoritmo de búsqueda',
-    rama: 'desarrollo',
+    rama: ['desarrollo'],
     tipo: 'Ordenamiento',
     dificultad: 'Intermedio',
     imagen: '/programacion2.jpeg',
@@ -170,7 +179,7 @@ const actividadesData = [
     id: 'simulador-red-lan-1',
     title: 'Simulador de Red LAN',
     description: 'Conecta correctamente los dispositivos para crear una red local',
-    rama: 'redes',
+    rama: ['redes'],
     tipo: 'Simulación',
     dificultad: 'Intermedio',
     imagen: '/redes.jpeg',
@@ -198,7 +207,7 @@ const actividadesData = [
     id: 'desafio-hardware-1',
     title: 'Identificar Componentes de Hardware',
     description: 'Relaciona cada componente con su función correcta',
-    rama: 'desarrollo',
+    rama: ['desarrollo'],
     tipo: 'Desafío',
     dificultad: 'Básico',
     imagen: '/programacion.jpeg',
@@ -311,6 +320,18 @@ async function seed() {
     await sequelize.sync({ force: true });
     console.log('✅ Tablas recreadas');
     
+    // Usuario super administrador
+    await Usuario.create({
+      nombre: superAdminUser.nombre,
+      apellido: superAdminUser.apellido,
+      email: superAdminUser.email,
+      password: hashPassword(superAdminUser.password),
+      rol: superAdminUser.rol,
+      activo: true,
+      estado: 'aprobado' // Super admin siempre aprobado
+    });
+    console.log('✅ Usuario super administrador creado');
+    
     // Usuario administrador
     await Usuario.create({
       nombre: adminUser.nombre,
@@ -354,6 +375,7 @@ async function seed() {
     console.log(`✅ ${preguntasConocimiento.length} preguntas de conocimiento insertadas`);
     
     console.log('\n🎉 Seed completado exitosamente!');
+    console.log(`📋 Credenciales super admin: ${superAdminUser.email} / ${superAdminUser.password}`);
     console.log(`📋 Credenciales admin: ${adminUser.email} / ${adminUser.password}`);
     
     process.exit(0);

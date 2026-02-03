@@ -10,7 +10,7 @@ export interface AuthRequest extends Request {
   user?: {
     id: number;
     email: string;
-    rol: 'student' | 'admin';
+    rol: 'student' | 'admin' | 'super_admin';
   };
 }
 
@@ -39,7 +39,7 @@ export const verifyToken = async (
     const decoded = jwt.verify(token, JWT_SECRET) as {
       id: number;
       email: string;
-      rol: 'student' | 'admin';
+      rol: 'student' | 'admin' | 'super_admin';
     };
     
     // Verificar que el usuario existe y está activo
@@ -79,7 +79,7 @@ export const verifyToken = async (
 /**
  * Middleware para verificar rol de administrador
  * Debe usarse después de verifyToken
- * Retorna 403 si el usuario no es admin
+ * Retorna 403 si el usuario no es admin o super_admin
  */
 export const requireAdmin = (
   req: AuthRequest,
@@ -91,8 +91,31 @@ export const requireAdmin = (
     return;
   }
   
-  if (req.user.rol !== 'admin') {
+  if (req.user.rol !== 'admin' && req.user.rol !== 'super_admin') {
     res.status(403).json({ error: 'Acceso denegado. Se requiere rol de administrador' });
+    return;
+  }
+  
+  next();
+};
+
+/**
+ * Middleware para verificar rol de super administrador
+ * Debe usarse después de verifyToken
+ * Retorna 403 si el usuario no es super_admin
+ */
+export const requireSuperAdmin = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (!req.user) {
+    res.status(401).json({ error: 'No autenticado' });
+    return;
+  }
+  
+  if (req.user.rol !== 'super_admin') {
+    res.status(403).json({ error: 'Acceso denegado. Se requiere rol de super administrador' });
     return;
   }
   
@@ -102,7 +125,7 @@ export const requireAdmin = (
 /**
  * Función helper para generar token JWT
  */
-export const generateToken = (user: { id: number; email: string; rol: 'student' | 'admin' }): string => {
+export const generateToken = (user: { id: number; email: string; rol: 'student' | 'admin' | 'super_admin' }): string => {
   return jwt.sign(
     {
       id: user.id,

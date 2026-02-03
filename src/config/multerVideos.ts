@@ -25,12 +25,31 @@ const upload = multer({
     fileSize: 100 * 1024 * 1024 // 100MB
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['video/mp4', 'video/webm', 'video/x-msvideo'];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Tipo de archivo no permitido'));
+    // Solo permitir archivos .mp4
+    const allowedMimetype = 'video/mp4';
+    const allowedExtension = '.mp4';
+    
+    console.log('🔍 Validando archivo:', {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      fieldname: file.fieldname
+    });
+    
+    // Verificar extensión del archivo primero
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+    if (fileExtension !== allowedExtension) {
+      console.log('❌ Extensión no permitida:', fileExtension);
+      return cb(new Error(`Extensión de archivo no permitida: ${fileExtension}. Solo se aceptan archivos ${allowedExtension}`));
     }
+    
+    // Verificar mimetype
+    if (file.mimetype !== allowedMimetype) {
+      console.log('❌ Mimetype no permitido:', file.mimetype);
+      return cb(new Error(`Tipo de archivo no permitido: ${file.mimetype}. Solo se aceptan archivos ${allowedMimetype}. Si descargaste este video de YouTube, puede tener un codec incompatible. Intenta convertirlo o usar un video grabado directamente.`));
+    }
+    
+    console.log('✅ Archivo validado correctamente');
+    cb(null, true);
   }
 });
 
